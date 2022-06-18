@@ -30,8 +30,8 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.0.1
-last update:    2020/6/17
+version:        1.0.2
+last update:    2020/6/18
 ]])
 
 
