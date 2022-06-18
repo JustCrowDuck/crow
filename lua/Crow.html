@@ -30,8 +30,12 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.0.2
+version:        1.0.3
 last update:    2020/6/18
+
+Remove kill say and hit sound (soume bugs in these two modules)
+
+Public config:  7O6iL1ibPWe0
 ]])
 
 
@@ -277,8 +281,8 @@ menu.add_check_box("Health UI") -- OK
 
 menu.add_combo_box("Mask Changer", mask_names_list) -- OK
 
-menu.add_check_box("Killsay") -- OK
-menu.add_check_box("Hitsound") -- OK
+-- menu.add_check_box("Killsay") -- OK
+-- menu.add_check_box("Hitsound") -- OK
 -- Ui end
 
 
@@ -356,14 +360,6 @@ end)
 -- Slow walk begin
 local bit = require("bit")
 local function slowwalk(cmd)
-    if not Crow_lua_loading then return end
-    if not menu.get_bool("Custom Slow-Walk") or not CursorHold(160) then
-        return
-    end
-    if not entitylist.get_local_player() then
-        return
-    end
-
     Forward_Flag = bit.band(cmd.buttons, 8) == 8
     Back_Flag = bit.band(cmd.buttons, 16) == 16
     Left_Flag = bit.band(cmd.buttons, 512) == 512
@@ -392,7 +388,16 @@ local function slowwalk(cmd)
     cmd.forwardmove = Movement_Straight
     cmd.sidemove = Movement_Side
 end
-client.add_callback("create_move",slowwalk)
+client.add_callback("create_move",function ()
+    if not Crow_lua_loading then return end
+    if not menu.get_bool("Custom Slow-Walk") or not CursorHold(160) then
+        return
+    end
+    if not entitylist.get_local_player() then
+        return
+    end
+    slowwalk()
+end)
 -- Slow walk end
 
 
@@ -1084,35 +1089,35 @@ end)
 -- Maskchanger end
 
 
--- Killsay begin
-events.register_event("player_death", function(event)
-    if not Crow_lua_loading or not menu.get_bool("Killsay") then return end
-    local attacker = event:get_int("attacker")
-    local attacker_to_player = engine.get_player_for_user_id(attacker)
-    local local_index = engine.get_local_player_index()
+-- -- Killsay begin
+-- events.register_event("player_death", function(event)
+--     if not Crow_lua_loading and not menu.get_bool("Killsay") then return end
+--     local attacker = event:get_int("attacker")
+--     local attacker_to_player = engine.get_player_for_user_id(attacker)
+--     local local_index = engine.get_local_player_index()
 
-    if attacker_to_player == local_index then
-        console.execute("say crow.pub | free cfg & free cheat");
-    end
+--     if attacker_to_player == local_index then
+--         console.execute("say crow.pub | free cfg & free cheat");
+--     end
 	
-end)
--- Killsay end
+-- end)
+-- -- Killsay end
 
 
 
--- Hitsound begin
-events.register_event("player_hurt", function(event)
-    if not Crow_lua_loading or not menu.get_bool("Hitsound") then return end
-    local attacker = event:get_int("attacker")
-    local attacker_to_player = engine.get_player_for_user_id(attacker)
-    local local_index = engine.get_local_player_index()
+-- -- Hitsound begin
+-- events.register_event("player_hurt", function(event)
+--     if not Crow_lua_loading and not menu.get_bool("Hitsound") then return end
+--     local attacker = event:get_int("attacker")
+--     local attacker_to_player = engine.get_player_for_user_id(attacker)
+--     local local_index = engine.get_local_player_index()
 
-    if attacker_to_player == local_index then
-        console.execute("play hitsound.wav");
-    end
+--     if attacker_to_player == local_index then
+--         console.execute("play hitsound.wav");
+--     end
 	
-end)
--- Hitsound end
+-- end)
+-- -- Hitsound end
 
 
 
