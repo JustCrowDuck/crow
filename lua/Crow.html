@@ -30,12 +30,14 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.0.3
-last update:    2020/6/18
+version:        1.0.4
+last update:    2020/6/19
 
 Remove kill say and hit sound (soume bugs in these two modules)
+Fix hitlog
+Fix slow-walking
 
-Public config:  7O6iL1ibPWe0
+Public config:  Some Problems
 ]])
 
 
@@ -275,7 +277,7 @@ menu.add_check_box("Keybinds") -- OK
 menu.add_slider_int("Key binds position X", 0, engine.get_screen_width()) -- OK
 menu.add_slider_int("Key binds position Y", 0, engine.get_screen_height()) -- OK
 
-menu.add_check_box("Hitlog") -- OK
+menu.add_check_box("Enable hitlog") -- OK
 
 menu.add_check_box("Health UI") -- OK
 
@@ -388,7 +390,7 @@ local function slowwalk(cmd)
     cmd.forwardmove = Movement_Straight
     cmd.sidemove = Movement_Side
 end
-client.add_callback("create_move",function ()
+client.add_callback("create_move",function (cmd)
     if not Crow_lua_loading then return end
     if not menu.get_bool("Custom Slow-Walk") or not CursorHold(160) then
         return
@@ -396,7 +398,7 @@ client.add_callback("create_move",function ()
     if not entitylist.get_local_player() then
         return
     end
-    slowwalk()
+    slowwalk(cmd)
 end)
 -- Slow walk end
 
@@ -740,14 +742,14 @@ if not shot_num then shot_num = 0 end
 
 local function write_shot_num()
   file.write(os.getenv("APPDATA") .. "//Legendware//Crow//data//shot_num", tostring(shot_num))
-  client.log("Crow的hitlog: 目前已经开了 " .. shot_num .. " 枪了")
-  chat_print.print(chat_print.vtbl, 0, 0, " \x0C[Crow的hitlog]  \x08目前已经开了 \x07" .. shot_num .. " \x08枪了")
+  client.log("Crow's hitlog: 目前已经开了 " .. shot_num .. " 枪了")
+  chat_print.print(chat_print.vtbl, 0, 0, " \x0C[Crow's hitlog]  \x08目前已经开了 \x07" .. shot_num .. " \x08枪了")
 end
 
 
 
 client.add_callback("on_shot", function (shot_info)
-    if not Crow_lua_loading or not menu.get_bool("Hitlog") then return end
+    if not Crow_lua_loading or not menu.get_bool("Enable hitlog") then return end
     local results       = shot_info.result
     local target        = shot_info.target_index
     local targetname    = gpinf(target).name
@@ -761,16 +763,16 @@ client.add_callback("on_shot", function (shot_info)
   
    shot_num = shot_num + 1
    if results == "Hit" then
-    chat_print.print(chat_print.vtbl, 0, 0, "[\x06Crow的大粪LW\x08] \x08第\x03" .. shot_num .. "\x08枪 蒙中了 \x03" .. targetname .. "\x08 造成了: \x07" .. serverdamage .. "\x08 部位 \x10" .. serverhitbox .. "\x08 | 命中率: \x09" .. hitchance .. "\x08 | 预计伤害: \x07" .. clientdamage .. "\x08 | 预计部位: \x10" .. clienthitbox .. "\x08 | 回溯: \x0C" .. backtrack .. "\x08 | 安全点: \x03" .. safe)
+    chat_print.print(chat_print.vtbl, 0, 0, "[\x06LW\x08] \x08第\x03" .. shot_num .. "\x08枪 蒙中了 \x03" .. targetname .. "\x08 造成了: \x07" .. serverdamage .. "\x08 部位 \x10" .. serverhitbox .. "\x08 | 命中率: \x09" .. hitchance .. "\x08 | 预计伤害: \x07" .. clientdamage .. "\x08 | 预计部位: \x10" .. clienthitbox .. "\x08 | 回溯: \x0C" .. backtrack .. "\x08 | 安全点: \x03" .. safe)
     
     elseif results == "Spread" then
-        chat_print.print(chat_print.vtbl, 0, 0, "[\x02Crow的大粪LW\x08] \x08第\x03" .. shot_num .. "\x08枪 空枪 \x03" .. targetname .. "\x08 原因: \x02扩散\x08 | 命中率: \x09" .. hitchance .. "\x08 | 预计伤害: \x07" .. clientdamage .. "\x08 | 实际伤害: \x07" .. serverdamage .. "\x08 | 预计部位: \x10" .. clienthitbox .. "\x08 | 实际部位: \x10" .. serverhitbox .. "\x08 | 回溯: \x0C" .. backtrack .. "\x08 | 安全点: \x03" .. safe)
+        chat_print.print(chat_print.vtbl, 0, 0, "[\x02LW\x08] \x08第\x03" .. shot_num .. "\x08枪 空枪 \x03" .. targetname .. "\x08 原因: \x02扩散\x08 | 命中率: \x09" .. hitchance .. "\x08 | 预计伤害: \x07" .. clientdamage .. "\x08 | 实际伤害: \x07" .. serverdamage .. "\x08 | 预计部位: \x10" .. clienthitbox .. "\x08 | 实际部位: \x10" .. serverhitbox .. "\x08 | 回溯: \x0C" .. backtrack .. "\x08 | 安全点: \x03" .. safe)
     
     elseif results == "Resolver" then
-        chat_print.print(chat_print.vtbl, 0, 0, "[\x02Crow的大粪LW\x08] \x08第\x03" .. shot_num .. "\x08枪 空枪 \x03" .. targetname .. "\x08 原因: \x02解析\x08 | 命中率: \x09" .. hitchance .. "\x08 | 预计伤害: \x07" .. clientdamage .. "\x08 | 实际伤害:: \x07" .. serverdamage .. "\x08 | 预计部位: \x10" .. clienthitbox .. "\x08 | 实际部位: \x10" .. serverhitbox .. "\x08 | 回溯: \x0C" .. backtrack .. "\x08 | 安全点: \x03" .. safe)
+        chat_print.print(chat_print.vtbl, 0, 0, "[\x02LW\x08] \x08第\x03" .. shot_num .. "\x08枪 空枪 \x03" .. targetname .. "\x08 原因: \x02解析\x08 | 命中率: \x09" .. hitchance .. "\x08 | 预计伤害: \x07" .. clientdamage .. "\x08 | 实际伤害:: \x07" .. serverdamage .. "\x08 | 预计部位: \x10" .. clienthitbox .. "\x08 | 实际部位: \x10" .. serverhitbox .. "\x08 | 回溯: \x0C" .. backtrack .. "\x08 | 安全点: \x03" .. safe)
     
     else
-        chat_print.print(chat_print.vtbl, 0, 0, "[\x02Crow的大粪LW\x08] \x08第\x03" .. shot_num .. "\x08枪 空枪 \x03" .. targetname .. "\x08 原因: \x02死亡\x08 | 命中率: \x09" .. hitchance .. "\x08 | 预计伤害: \x07" .. clientdamage .. "\x08 | 实际伤害:: \x07" .. serverdamage .. "\x08 | 预计部位: \x10" .. clienthitbox .. "\x08 | 实际部位: \x10" .. serverhitbox .. "\x08 | 回溯: \x0C" .. backtrack .. "\x08 | 安全点: \x03" .. safe)
+        chat_print.print(chat_print.vtbl, 0, 0, "[\x02LW\x08] \x08第\x03" .. shot_num .. "\x08枪 空枪 \x03" .. targetname .. "\x08 原因: \x02死亡\x08 | 命中率: \x09" .. hitchance .. "\x08 | 预计伤害: \x07" .. clientdamage .. "\x08 | 实际伤害:: \x07" .. serverdamage .. "\x08 | 预计部位: \x10" .. clienthitbox .. "\x08 | 实际部位: \x10" .. serverhitbox .. "\x08 | 回溯: \x0C" .. backtrack .. "\x08 | 安全点: \x03" .. safe)
     end
   
     if shot_num % 10 == 0 then write_shot_num() end
