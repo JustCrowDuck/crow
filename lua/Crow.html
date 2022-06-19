@@ -30,14 +30,22 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.0.4
+version:        1.0.5
 last update:    2020/6/19
+Public config:  kaldKcytsgE2
 
-Remove kill say and hit sound (soume bugs in these two modules)
+Log - V1.0.2
+Remove kill say and hit sound (some bugs in these two modules)
+
+Log - V1.0.3
 Fix hitlog
+
+Log - V1.0.4
 Fix slow-walking
 
-Public config:  Some Problems
+Log - V1.0.5
+Add Full-Random AA (Just Make A Shit lol)
+Fix Pitch 0 on land
 ]])
 
 
@@ -158,6 +166,7 @@ local aa_mode_list = {
     [0] = "Jitter",
     [1] = "Spin",
     [2] = "Random",
+    [3] = "Full Random",
 }
 
 
@@ -293,7 +302,7 @@ menu.add_combo_box("Mask Changer", mask_names_list) -- OK
 -- Anti-Aim begin
 local yaw = 0
 
-local function anti_aim()
+local function anti_aim(cmd)
     local tick_bit = {
         [0] = 1,
         [1] = -1,
@@ -339,6 +348,9 @@ local function anti_aim()
             menu.set_int("anti_aim.yaw_modifier", 1)
             menu.set_int("anti_aim.yaw_modifier_range", yaw_value)
         end
+    elseif menu.get_int("MODE") == 3 then 
+        menu.set_int("anti_aim.yaw_offset", math.random(-180, 180))
+        menu.set_int("anti_aim.pitch" , math.random(-1, 1))
     end
 
     menu.set_int("anti_aim.desync_type", menu.get_int("Desync type"))
@@ -349,11 +361,11 @@ local function anti_aim()
 
 end
 
-client.add_callback("create_move", function ()
+client.add_callback("create_move", function (cmd)
     if not Crow_lua_loading then return end
-    if (E_Click ~= 0) then return end
+    if (E_Click ~= 0) and menu.get_bool("legit aa on E") then return end
     if not menu.get_bool("AntiAim") then menu.set_int("anti_aim.yaw_offset", 0) return end
-    anti_aim()
+    anti_aim(cmd)
 end)
 -- Anti-Aim end
 
@@ -405,7 +417,7 @@ end)
 
 
 -- Legit aa begin
-client.add_callback("on_paint",function ()
+client.add_callback("create_move",function ()
     if not Crow_lua_loading or not (E_Click ~= 0) then return end
     if menu.get_bool("legit aa on E") then
         menu.set_int("anti_aim.pitch" , 0)
@@ -490,7 +502,7 @@ local end_tick = 0
 local state
 
 local function pitch0()
-    local inAir = entitylist.get_local_player():get_prop_int("CBasePlayer", "m_fFlags") == 256
+    local inAir = entitylist.get_local_player():get_prop_int("CBasePlayer", "m_vecVelocity[2]") ~= 0
     local curtick = globals.get_tickcount()
     if inAir == true then
         ground_tick = 0
@@ -510,7 +522,7 @@ end
 
 client.add_callback("create_move", function ()
     if not Crow_lua_loading then return end
-    if not entitylist.get_local_player() then
+    if not entitylist.get_local_player() or menu.get_int("MODE") == 3 then
         return
     end
     pitch0()
