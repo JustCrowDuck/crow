@@ -30,9 +30,9 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.0.5
-last update:    2020/6/19
-Public config:  kaldKcytsgE2
+version:        1.0.6
+last update:    2020/6/20
+Public config:  WI61RDngg2ED
 
 Log - V1.0.2
 Remove kill say and hit sound (some bugs in these two modules)
@@ -46,6 +46,10 @@ Fix slow-walking
 Log - V1.0.5
 Add Full-Random AA (Just Make A Shit lol)
 Fix Pitch 0 on land
+
+Log - V1.0.6
+Add animbreaker
+Now we have leg breaker,static leg and safe pitch 0 on land!
 ]])
 
 
@@ -268,7 +272,7 @@ local chat_print = {
 -- Ui begin
 menu.add_check_box("AntiAim") -- OK
 menu.add_combo_box("MODE", aa_mode_list) -- OK
-menu.add_combo_box("pitch", pitch_list) -- OK
+menu.add_combo_box("Pitch", pitch_list) -- OK
 menu.add_slider_int("AA limit 1", 1, 180) -- OK
 menu.add_slider_int("AA limit 2", 1, 180) -- OK
 menu.add_combo_box("Desync type", desync_type_list) -- OK
@@ -277,14 +281,18 @@ menu.add_check_box("Custom Slow-Walk") -- OK
 menu.add_slider_int("Custom Slow-Walk Speed", 1, 120) -- OK
 menu.add_check_box("legit aa on E") -- OK
 
-menu.add_check_box("Static Legs in air") -- OK
 
 menu.add_check_box("JumpScout") -- OK
 menu.add_slider_int("Normal Hitchance", 0, 100) -- OK
 menu.add_slider_int("DT Hitchance", 0, 100) -- OK
 menu.add_slider_int("Air Hitchance", 0, 100) -- OK
 
+menu.add_check_box("Leg Breaker")
+menu.add_check_box("Static leg in air")
+menu.add_check_box("Pitch 0 on land")
 menu.add_slider_int("Pitch 0 tick", 0, 100) -- OK
+-- menu.add_check_box("Pitch 0 on land")
+
 
 menu.add_check_box("Clantag") -- OK
 
@@ -318,6 +326,9 @@ local function anti_aim(cmd)
 
     local yaw_value = 0
     local tick = globals.get_tickcount() % 2
+
+    menu.set_int("anti_aim.pitch" , menu.get_int("Pitch") - 1)
+
     if menu.get_int("MODE") == 0 then
         yaw_value = math.floor((menu.get_int("AA limit 1") + menu.get_int("AA limit 2")) / 2)
         if menu.get_int("Desync type") == 0 then
@@ -440,45 +451,6 @@ end)
 
 
 
--- Static Legs in air begin
-local ffi_helpers = {
-    get_entity_address = function(ent_index)
-        local addr = get_client_entity_fn(entity_list_ptr, ent_index)
-        return addr
-    end
-}
-
-local offset_value = 0x9960
-local shared_onground
-
-client.add_callback("on_paint", function()
-    if not Crow_lua_loading or not menu.get_bool("Static Legs in air") then return end
-    local localplayer = entitylist.get_local_player()
-    if not localplayer then return end
-
-    local bOnGround = bit.band(localplayer:get_prop_float("CBasePlayer", "m_fFlags"), bit.lshift(1,0)) ~= 0
-    if not bOnGround then
-        ffi.cast("CCSGOPlayerAnimationState_534535_t**", ffi_helpers.get_entity_address(localplayer:get_index()) + offset_value)[0].flDurationInAir = 99
-        ffi.cast("CCSGOPlayerAnimationState_534535_t**", ffi_helpers.get_entity_address(localplayer:get_index()) + offset_value)[0].flHitGroundCycle = 0
-        ffi.cast("CCSGOPlayerAnimationState_534535_t**", ffi_helpers.get_entity_address(localplayer:get_index()) + offset_value)[0].bHitGroundAnimation = false
-    end
-
-    shared_onground = bOnGround
-end)
-
-client.add_callback("on_paint", function()
-    local localplayer = entitylist.get_local_player()
-    if not localplayer then return end
-
-    local bOnGround = bit.band(localplayer:get_prop_float("CBasePlayer", "m_fFlags"), bit.lshift(1,0)) ~= 0
-    if bOnGround and not shared_onground then
-        ffi.cast("CCSGOPlayerAnimationState_534535_t**", ffi_helpers.get_entity_address(localplayer:get_index()) + offset_value)[0].flDurationInAir = 0.5
-    end -- ACT_CSGO_LAND_LIGHT
-end)
--- Static Legs in air end
-
-
-
 
 -- Jumpscout begin
 local function jumpscout()
@@ -504,10 +476,151 @@ local function jumpscout()
 
 
 
--- Pitch 0 on land begin
+-- Animbreaker begin
+local animbreaker_cache = {}
+local last_time = -1
+local ptr = nil
+local index = -1
+local local_player = nil
+
+local ffi_helpers = {
+    get_animstate_offset = function()
+        return 14612
+    end,
+	get_entity_address = function(ent_index)
+        local addr = get_client_entity_fn(entity_list_ptr, ent_index)
+        return addr
+    end
+}
+
+
+local function pointer()
+    if last_time == globals.get_tickcount() then
+        return ptr
+    end
+    ptr = entitylist.get_local_player()
+    if ptr then 
+        index = ptr:get_index()
+    else 
+        index = -1
+    end
+    last_time = globals.get_tickcount()
+    return ptr
+end
+
+local function getindex()
+    pointer()
+    return index
+end
+
+local function bind_argument(fn, arg)
+    return function(...)
+        return fn(arg, ...)
+    end
+end
+
+local get_pose_parameters = ffi.cast("struct pose_params_t*(__thiscall* )( void*, int )", utils.find_signature("client.dll", "55 8B EC 8B 45 08 57 8B F9 8B 4F 04 85 C9 75 15"))
+local get_client_entity = bind_argument(ffi.cast("c_entity_list_get_client_entity_t", ffi.cast(ffi.typeof("uintptr_t**"), utils.create_interface("client.dll", "VClientEntityList003"))[0][3]), ffi.cast(ffi.typeof("uintptr_t**"), utils.create_interface("client.dll", "VClientEntityList003")))
+
+
+local function animbreaker_set_params(player_ptr, layer, start_val, end_val)
+
+    player_ptr = ffi.cast("unsigned int", player_ptr)
+    if player_ptr == 0x0 then
+        return false
+    end
+    local studio_hdr = ffi.cast("void**", player_ptr + 0x2950)[0]
+    if studio_hdr == nil then
+        return false
+    end
+    local pose_params = get_pose_parameters(studio_hdr, layer)
+    if pose_params == nil or pose_params == 0x0 then
+        return
+    end
+    if animbreaker_cache[layer] == nil then
+        animbreaker_cache[layer] = {}
+        animbreaker_cache[layer].m_flStart = pose_params.m_flStart
+        animbreaker_cache[layer].m_flEnd = pose_params.m_flEnd
+        animbreaker_cache[layer].m_flState = pose_params.m_flState
+        animbreaker_cache[layer].installed = false
+        return true
+    end
+    if start_val ~= nil and not animbreaker_cache[layer].installed then
+        pose_params.m_flStart = start_val
+        pose_params.m_flEnd = end_val
+        pose_params.m_flState = (pose_params.m_flStart + pose_params.m_flEnd) / 2
+        animbreaker_cache[layer].installed = true
+        return true
+    end
+    if animbreaker_cache[layer].installed then
+        pose_params.m_flStart = animbreaker_cache[layer].m_flStart
+        pose_params.m_flEnd = animbreaker_cache[layer].m_flEnd
+        pose_params.m_flState = animbreaker_cache[layer].m_flState
+        animbreaker_cache[layer].installed = false
+        return true
+    end
+    return false
+end
+
+local function animbreaker_handle_prediction(cmd)
+    local inAir = entitylist.get_local_player():get_prop_int("CBasePlayer", "m_vecVelocity[2]") ~= 0
+    if inAir then ground_tick = 1 end
+
+    local_player = get_client_entity(getindex())
+    if local_player == nil then
+        return
+    end
+
+
+
+    if menu.get_bool("Leg Breaker") then
+        local localplayer = entitylist.get_local_player()
+        if not localplayer then return end
+        ffi.cast("float*", ffi_helpers.get_entity_address(localplayer:get_index()) + 10100)[0] = 0
+        menu.set_int("misc.leg_movement", math.random(1,2))
+    end
+    if menu.get_bool("Static leg in air") then
+        animbreaker_set_params(local_player, 6, 0.9, 1)
+    end
+end
+local function animbreaker_handle_cmove()
+    local local_player = get_client_entity(getindex())
+    if local_player == nil then
+        return
+    end
+    for k, v in pairs(animbreaker_cache) do
+        animbreaker_set_params(local_player, k)
+    end
+end
+local function animbreaker_on_unload()
+    local local_player = get_client_entity(getindex())
+    if local_player == nil then
+        return
+    end
+    for k, v in pairs(animbreaker_cache) do
+        animbreaker_set_params(local_player, k)
+    end
+end
+client.add_callback("create_move", function ()
+    if not Crow_lua_loading then return end
+    animbreaker_handle_cmove()
+end)
+client.add_callback("create_move", function (cmd)
+    if not Crow_lua_loading then return end
+    animbreaker_handle_prediction(cmd)
+end)
+client.add_callback("unload", function ()
+    if not Crow_lua_loading then return end
+    animbreaker_on_unload()
+end)
+
+
+
+
+
+
 local ground_tick = 1
 local end_tick = 0
-local state
 
 local function pitch0()
     local inAir = entitylist.get_local_player():get_prop_int("CBasePlayer", "m_vecVelocity[2]") ~= 0
@@ -515,27 +628,22 @@ local function pitch0()
     if inAir == true then
         ground_tick = 0
         end_tick = curtick + menu.get_int("Pitch 0 tick")
-        state = "in air"
     else
         ground_tick = ground_tick + 1
-        state = "on land"
     end
     if ground_tick > 1 and end_tick > curtick then
-        menu.set_int("anti_aim.pitch", 0)
-    else
-        if E_Click ~= 0 then return end
-        menu.set_int("anti_aim.pitch", menu.get_int("pitch") - 1)
+        animbreaker_set_params(local_player, 12, 0.999, 1)
     end
 end
 
 client.add_callback("create_move", function ()
     if not Crow_lua_loading then return end
-    if not entitylist.get_local_player() or menu.get_int("MODE") == 3 then
+    if not entitylist.get_local_player() or menu.get_int("MODE") == 3 or not menu.get_bool("Pitch 0 on land") then
         return
     end
     pitch0()
 end)
--- Pitch 0 on land end
+-- Animbreaker end
 
 
 
