@@ -30,7 +30,7 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.0.7
+version:        1.0.8
 last update:    2020/6/21
 Public config:  Sgzng7fwbw29
 
@@ -53,6 +53,10 @@ Now we have leg breaker,static leg and safe pitch 0 on land!
 
 Log - V1.0.7
 Add Console Color
+
+Log - V1.0.8
+Update animbreaker
+Now we have perfect leg breaker
 ]])
 
 
@@ -528,6 +532,7 @@ local get_client_entity = bind_argument(ffi.cast("c_entity_list_get_client_entit
 
 local function animbreaker_set_params(player_ptr, layer, start_val, end_val)
 
+
     player_ptr = ffi.cast("unsigned int", player_ptr)
     if player_ptr == 0x0 then
         return false
@@ -566,9 +571,6 @@ local function animbreaker_set_params(player_ptr, layer, start_val, end_val)
 end
 
 local function animbreaker_handle_prediction(cmd)
-    local inAir = entitylist.get_local_player():get_prop_int("CBasePlayer", "m_vecVelocity[2]") ~= 0
-    if inAir then ground_tick = 1 end
-
     local_player = get_client_entity(getindex())
     if local_player == nil then
         return
@@ -577,10 +579,8 @@ local function animbreaker_handle_prediction(cmd)
 
 
     if menu.get_bool("Leg Breaker") then
-        local localplayer = entitylist.get_local_player()
-        if not localplayer then return end
-        ffi.cast("float*", ffi_helpers.get_entity_address(localplayer:get_index()) + 10100)[0] = 0
-        menu.set_int("misc.leg_movement", math.random(1,2))
+        animbreaker_set_params(local_player, 0, -180, -179)
+        menu.set_int("misc.leg_movement", 2)
     end
     if menu.get_bool("Static leg in air") then
         animbreaker_set_params(local_player, 6, 0.9, 1)
