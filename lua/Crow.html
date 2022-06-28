@@ -30,9 +30,9 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.0.8
-last update:    2020/6/21
-Public config:  Sgzng7fwbw29
+version:        1.0.9
+last update:    2020/6/28
+Public config:  33Qh1oPwq3yf
 
 Log - V1.0.2
 Remove kill say and hit sound (some bugs in these two modules)
@@ -57,6 +57,10 @@ Add Console Color
 Log - V1.0.8
 Update animbreaker
 Now we have perfect leg breaker
+
+Log - V1.0.9
+New anti-aim system
+Add custom fake lag
 ]])
 
 
@@ -203,6 +207,12 @@ local pitch_list = {
     "Down",
 }
 
+local fl_mode_list = {
+    "Static",
+    "Dynamic",
+    "Fluctuate",
+    "Random",
+}
 
 local mask_names_list = {
     'None',
@@ -284,6 +294,9 @@ menu.add_slider_int("AA limit 1", 1, 180) -- OK
 menu.add_slider_int("AA limit 2", 1, 180) -- OK
 menu.add_combo_box("Desync type", desync_type_list) -- OK
 menu.add_slider_int("Desync range", 0, 60) -- OK
+menu.add_combo_box("Fake lag type", fl_mode_list)
+menu.add_slider_int("Fake lag limit 1", 1, 16)
+menu.add_slider_int("Fake lag limit 2", 1, 16)
 menu.add_check_box("Custom Slow-Walk") -- OK
 menu.add_slider_int("Custom Slow-Walk Speed", 1, 120) -- OK
 menu.add_check_box("legit aa on E") -- OK
@@ -341,7 +354,7 @@ local function anti_aim(cmd)
 
     if menu.get_int("MODE") == 0 then
         yaw_value = math.floor((menu.get_int("AA limit 1") + menu.get_int("AA limit 2")) / 2)
-        if menu.get_int("Desync type") == 0 then
+        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") then
             yaw_value = math.floor(yaw_value / 2)
             menu.set_int("anti_aim.yaw_modifier", 0)
             yaw = yaw_value * tick_bit[tick]
@@ -367,7 +380,7 @@ local function anti_aim(cmd)
 
     elseif menu.get_int("MODE") == 2 then
         yaw_value = math.random(menu.get_int("AA limit 1"),menu.get_int("AA limit 2"))
-        if menu.get_int("Desync type") == 0 then
+        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") then
             yaw_value = math.floor(yaw_value / 2)
             menu.set_int("anti_aim.yaw_modifier", 0)
             yaw = yaw_value * tick_bit[tick]
@@ -387,6 +400,20 @@ local function anti_aim(cmd)
         menu.set_int("anti_aim.desync_range", menu.get_int("Desync range"))
         menu.set_int("anti_aim.desync_range_inverted", menu.get_int("Desync range"))
     end
+
+    if menu.get_int("Fake lag type") == 0 then
+		menu.set_int("anti_aim.fake_lag_type",0)
+        menu.set_int("anti_aim.fake_lag_limit", math.floor((menu.get_int("Fake lag limit 1") + menu.get_int("Fake lag limit 2")) / 2))
+	elseif menu.get_int("Fake lag type") == 1 then
+		menu.set_int("anti_aim.fake_lag_type",1)
+        menu.set_int("anti_aim.fake_lag_limit", math.floor((menu.get_int("Fake lag limit 1") + menu.get_int("Fake lag limit 2")) / 2))
+	elseif menu.get_int("Fake lag type") == 2 then
+		menu.set_int("anti_aim.fake_lag_type",2)
+        menu.set_int("anti_aim.fake_lag_limit", math.floor((menu.get_int("Fake lag limit 1") + menu.get_int("Fake lag limit 2")) / 2))
+	elseif menu.get_int("Fake lag type") == 3 then
+        menu.set_int("anti_aim.fake_lag_type",0)
+		menu.set_int("anti_aim.fake_lag_limit", math.random(menu.get_int("Fake lag limit 1"), menu.get_int("Fake lag limit 2")))
+	end
 
 end
 
