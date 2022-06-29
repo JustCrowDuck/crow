@@ -30,8 +30,8 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.0.9
-last update:    2020/6/28
+version:        1.1.0
+last update:    2020/6/29
 Public config:  33Qh1oPwq3yf
 
 Log - V1.0.2
@@ -61,10 +61,11 @@ Now we have perfect leg breaker
 Log - V1.0.9
 New anti-aim system
 Add custom fake lag
+
+Log - V1.1.0
+Update the version number :d
+Fix AA on desync enable
 ]])
-
-
-
 
 
 
@@ -287,6 +288,8 @@ local chat_print = {
 
 
 -- Ui begin
+menu.add_slider_int("--------- Crow Start ---------", 1337, 1337)
+menu.add_slider_int("---------- Anti-Aim ----------", 1, 1)
 menu.add_check_box("AntiAim") -- OK
 menu.add_combo_box("MODE", aa_mode_list) -- OK
 menu.add_combo_box("Pitch", pitch_list) -- OK
@@ -302,34 +305,35 @@ menu.add_slider_int("Custom Slow-Walk Speed", 1, 120) -- OK
 menu.add_check_box("legit aa on E") -- OK
 
 
+menu.add_slider_int("------------ Rage ------------", 1, 1)
 menu.add_check_box("JumpScout") -- OK
 menu.add_slider_int("Normal Hitchance", 0, 100) -- OK
 menu.add_slider_int("DT Hitchance", 0, 100) -- OK
 menu.add_slider_int("Air Hitchance", 0, 100) -- OK
 
 
-
+menu.add_slider_int("------------ Misc ------------", 1, 1)
 menu.add_check_box("Leg Breaker") -- OK
 menu.add_check_box("Static leg in air") -- OK
 menu.add_check_box("Pitch 0 on land") -- OK
 menu.add_slider_int("Pitch 0 tick", 0, 100) -- OK
-
-
 menu.add_check_box("Clantag") -- OK
+menu.add_check_box("Enable hitlog") -- OK
 
+
+menu.add_slider_int("----------- Visuals -----------", 1, 1)
 menu.add_check_box("Watermark") -- OK
 menu.add_check_box("Indicators") -- OK
 menu.add_check_box("Keybinds") -- OK
 menu.add_slider_int("Key binds position X", 0, engine.get_screen_width()) -- OK
 menu.add_slider_int("Key binds position Y", 0, engine.get_screen_height()) -- OK
 
-menu.add_check_box("Enable hitlog") -- OK
-
 menu.add_check_box("Health UI") -- OK
 
 menu.add_combo_box("Mask Changer", mask_names_list) -- OK
 
 menu.add_color_picker("Console Color") -- OK
+menu.add_slider_int("---------- Crow End ----------", 1337, 1337)
 
 --menu.add_check_box("Skeet Resolver")
 -- Ui end
@@ -354,7 +358,7 @@ local function anti_aim(cmd)
 
     if menu.get_int("MODE") == 0 then
         yaw_value = math.floor((menu.get_int("AA limit 1") + menu.get_int("AA limit 2")) / 2)
-        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") then
+        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") and not menu.get_int("anti_aim.desync_type") == 0 then
             yaw_value = math.floor(yaw_value / 2)
             menu.set_int("anti_aim.yaw_modifier", 0)
             yaw = yaw_value * tick_bit[tick]
@@ -380,7 +384,7 @@ local function anti_aim(cmd)
 
     elseif menu.get_int("MODE") == 2 then
         yaw_value = math.random(menu.get_int("AA limit 1"),menu.get_int("AA limit 2"))
-        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") then
+        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") and not menu.get_int("anti_aim.desync_type") == 0 then
             yaw_value = math.floor(yaw_value / 2)
             menu.set_int("anti_aim.yaw_modifier", 0)
             yaw = yaw_value * tick_bit[tick]
@@ -903,8 +907,8 @@ if not shot_num then shot_num = 0 end
 
 local function write_shot_num()
   file.write(os.getenv("APPDATA") .. "//Legendware//Crow//data//shot_num", tostring(shot_num))
-  client.log("Crow's hitlog: 目前已经开了 " .. shot_num .. " 枪了")
-  chat_print.print(chat_print.vtbl, 0, 0, " \x0C[Crow's hitlog]  \x08目前已经开了 \x07" .. shot_num .. " \x08枪了")
+  client.log("log: 目前已经开了 " .. shot_num .. " 枪了")
+  chat_print.print(chat_print.vtbl, 0, 0, " \x0C[log]  \x08目前已经开了 \x07" .. shot_num .. " \x08枪了")
 end
 
 
@@ -1414,6 +1418,7 @@ end
 
 
 function on_paint()
+    if not Crow_lua_loading then return end
     local color = menu.get_color("Console Color")
     local i = first_material()
 
