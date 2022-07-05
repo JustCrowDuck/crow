@@ -30,9 +30,9 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.1.0
+version:        1.1.1
 last update:    2020/6/29
-Public config:  33Qh1oPwq3yf
+Public config:  iyzwUiYJ7zw6
 
 Log - V1.0.2
 Remove kill say and hit sound (some bugs in these two modules)
@@ -65,6 +65,9 @@ Add custom fake lag
 Log - V1.1.0
 Update the version number :d
 Fix AA on desync enable
+
+Log - V1.1.1
+Fix AA
 ]])
 
 
@@ -358,7 +361,7 @@ local function anti_aim(cmd)
 
     if menu.get_int("MODE") == 0 then
         yaw_value = math.floor((menu.get_int("AA limit 1") + menu.get_int("AA limit 2")) / 2)
-        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") and not menu.get_int("anti_aim.desync_type") == 0 then
+        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") and menu.get_int("anti_aim.desync_type") == 0 then
             yaw_value = math.floor(yaw_value / 2)
             menu.set_int("anti_aim.yaw_modifier", 0)
             yaw = yaw_value * tick_bit[tick]
@@ -384,7 +387,7 @@ local function anti_aim(cmd)
 
     elseif menu.get_int("MODE") == 2 then
         yaw_value = math.random(menu.get_int("AA limit 1"),menu.get_int("AA limit 2"))
-        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") and not menu.get_int("anti_aim.desync_type") == 0 then
+        if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") and menu.get_int("anti_aim.desync_type") == 0 then
             yaw_value = math.floor(yaw_value / 2)
             menu.set_int("anti_aim.yaw_modifier", 0)
             yaw = yaw_value * tick_bit[tick]
