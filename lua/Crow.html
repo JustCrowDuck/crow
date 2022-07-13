@@ -30,9 +30,9 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.1.1
-last update:    2020/6/29
-Public config:  iyzwUiYJ7zw6
+version:        1.1.2
+last update:    2020/7/13
+Public config:  Lt3voiOjKUH5
 
 Log - V1.0.2
 Remove kill say and hit sound (some bugs in these two modules)
@@ -68,6 +68,9 @@ Fix AA on desync enable
 
 Log - V1.1.1
 Fix AA
+
+Log - V1.1.2
+Add custom aa tick
 ]])
 
 
@@ -295,9 +298,11 @@ menu.add_slider_int("--------- Crow Start ---------", 1337, 1337)
 menu.add_slider_int("---------- Anti-Aim ----------", 1, 1)
 menu.add_check_box("AntiAim") -- OK
 menu.add_combo_box("MODE", aa_mode_list) -- OK
-menu.add_combo_box("Pitch", pitch_list) -- OK
 menu.add_slider_int("AA limit 1", 1, 180) -- OK
 menu.add_slider_int("AA limit 2", 1, 180) -- OK
+menu.add_combo_box("AA tick Mode", {"Static", "Random"})
+menu.add_slider_int("AA tick limit", 1, 20)
+menu.add_combo_box("Pitch", pitch_list) -- OK
 menu.add_combo_box("Desync type", desync_type_list) -- OK
 menu.add_slider_int("Desync range", 0, 60) -- OK
 menu.add_combo_box("Fake lag type", fl_mode_list)
@@ -347,15 +352,25 @@ menu.add_slider_int("---------- Crow End ----------", 1337, 1337)
 
 -- Anti-Aim begin
 local yaw = 0
+local tick_value = 1
 
 local function anti_aim(cmd)
-    local tick_bit = {
-        [0] = 1,
-        [1] = -1,
-    }
+
+
+    local tick_limit = menu.get_int("AA tick limit")
+    local tick = 0
+
+    
+
+    if menu.get_int("AA tick Mode") == 0 then
+        tick = globals.get_tickcount() % tick_limit
+        if tick == 0 then tick_value = tick_value * -1 end
+    elseif menu.get_int("AA tick Mode") == 1 then
+        tick = globals.get_tickcount() % math.random(tick_limit)
+        if tick == 0 then tick_value = tick_value * -1 end
+    end
 
     local yaw_value = 0
-    local tick = globals.get_tickcount() % 2
 
     menu.set_int("anti_aim.pitch" , menu.get_int("Pitch") - 1)
 
@@ -364,7 +379,7 @@ local function anti_aim(cmd)
         if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") and menu.get_int("anti_aim.desync_type") == 0 then
             yaw_value = math.floor(yaw_value / 2)
             menu.set_int("anti_aim.yaw_modifier", 0)
-            yaw = yaw_value * tick_bit[tick]
+            yaw = yaw_value * tick_value
             menu.set_int("anti_aim.yaw_offset", yaw)
         else
             menu.set_int("anti_aim.yaw_offset", 0)
@@ -390,7 +405,7 @@ local function anti_aim(cmd)
         if menu.get_int("Desync type") == 0 and not menu.get_bool("anti_aim.enable_fake_lag") and menu.get_int("anti_aim.desync_type") == 0 then
             yaw_value = math.floor(yaw_value / 2)
             menu.set_int("anti_aim.yaw_modifier", 0)
-            yaw = yaw_value * tick_bit[tick]
+            yaw = yaw_value * tick_value
             menu.set_int("anti_aim.yaw_offset", yaw)
         else
             menu.set_int("anti_aim.yaw_offset", 0)
@@ -527,15 +542,6 @@ local ptr = nil
 local index = -1
 local local_player = nil
 
-local ffi_helpers = {
-    get_animstate_offset = function()
-        return 14612
-    end,
-	get_entity_address = function(ent_index)
-        local addr = get_client_entity_fn(entity_list_ptr, ent_index)
-        return addr
-    end
-}
 
 
 local function pointer()
@@ -641,23 +647,6 @@ local function animbreaker_on_unload()
         animbreaker_set_params(local_player, k)
     end
 end
-client.add_callback("create_move", function ()
-    if not Crow_lua_loading then return end
-    animbreaker_handle_cmove()
-end)
-client.add_callback("create_move", function (cmd)
-    if not Crow_lua_loading then return end
-    animbreaker_handle_prediction(cmd)
-end)
-client.add_callback("unload", function ()
-    if not Crow_lua_loading then return end
-    animbreaker_on_unload()
-end)
-
-
-
-
-
 
 local ground_tick = 1
 local end_tick = 0
@@ -676,12 +665,26 @@ local function pitch0()
     end
 end
 
+
+
+client.add_callback("create_move", function ()
+    if not Crow_lua_loading then return end
+    animbreaker_handle_cmove()
+end)
+client.add_callback("create_move", function (cmd)
+    if not Crow_lua_loading then return end
+    animbreaker_handle_prediction(cmd)
+end)
 client.add_callback("create_move", function ()
     if not Crow_lua_loading then return end
     if not entitylist.get_local_player() or menu.get_int("MODE") == 3 or not menu.get_bool("Pitch 0 on land") then
         return
     end
     pitch0()
+end)
+client.add_callback("unload", function ()
+    if not Crow_lua_loading then return end
+    animbreaker_on_unload()
 end)
 -- Animbreaker end
 
@@ -1463,6 +1466,59 @@ client.add_callback('on_paint', on_paint)
 
 
 
+-- FPS boost start
+local optimization = true
+local function coolopt()
+   if optimization == true then
+    console.set_int( "r_3dsky", 0 )
+    console.set_int( "r_shadows", 0 )
+    console.set_int( "cl_csm_static_prop_shadows", 0 )
+    console.set_int( "cl_csm_shadows", 0 )
+    console.set_int( "cl_csm_world_shadows", 0 )
+    console.set_int( "cl_foot_contact_shadows", 0 )
+    console.set_int( "cl_csm_viewmodel_shadows", 0 )
+    console.set_int( "cl_csm_rope_shadows", 0 )
+    console.set_int( "cl_csm_sprite_shadows", 0 )
+    console.set_int( "cl_disablefreezecam", 0 )
+    console.set_int( "cl_freezecampanel_position_dynamic", 0 )
+    console.set_int( "cl_freezecameffects_showholiday", 0 )
+    console.set_int( "cl_showhelp", 0 )
+    console.set_int( "cl_autohelp", 0 )
+    console.set_int( "cl_disablehtmlmotd", 0 )
+    console.set_int( "mat_postprocess_enable", 0 )
+    console.set_int( "fog_enable_water_fog", 0 )
+    console.set_int( "gameinstructor_enable", 0 )
+    console.set_int( "cl_csm_world_shadows_in_viewmodelcascade", 0 )
+    console.set_int( "cl_disable_ragdolls", 0 )
+    client.log("::  hello from katana")
+    optimization = false
+    end
+end
+local function unload()
+    console.set_int( "r_3dsky", 1 )
+    console.set_int( "r_shadows", 1 )
+    console.set_int( "cl_csm_static_prop_shadows", 1 )
+    console.set_int( "cl_csm_shadows", 1 )
+    console.set_int( "cl_csm_world_shadows", 1 )
+    console.set_int( "cl_foot_contact_shadows", 1 )
+    console.set_int( "cl_csm_viewmodel_shadows", 1 )
+    console.set_int( "cl_csm_rope_shadows", 1 )
+    console.set_int( "cl_csm_sprite_shadows", 1 )
+    console.set_int( "cl_disablefreezecam", 1 )
+    console.set_int( "cl_freezecampanel_position_dynamic", 1 )
+    console.set_int( "cl_freezecameffects_showholiday", 1 )
+    console.set_int( "cl_showhelp", 1 )
+    console.set_int( "cl_autohelp", 1 )
+    console.set_int( "cl_disablehtmlmotd", 1 )
+    console.set_int( "mat_postprocess_enable", 1 )
+    console.set_int( "fog_enable_water_fog", 1 )
+    console.set_int( "gameinstructor_enable", 1 )
+    console.set_int( "cl_csm_world_shadows_in_viewmodelcascade", 1 )
+    console.set_int( "cl_disable_ragdolls", 1 )   
+end
+client.add_callback("unload", unload)
+client.add_callback("on_paint", coolopt)
+-- FPS boost end
 
 
 
