@@ -30,9 +30,9 @@ author:         Crow
 QQ:             2715930853
 QQ group:       926086108
 
-version:        1.1.2
+version:        1.1.3
 last update:    3224/2/31
-Public config:  71JtWgcwHURd
+Public config:  nvxeWOhZxmH3
 
 Log - V1.0.2
 Remove kill say and hit sound (some bugs in these two modules)
@@ -71,6 +71,10 @@ Fix AA
 
 Log - V1.1.2
 Add custom aa tick
+
+Log - V1.1.3
+Fix bug
+Delete legit-aa on E
 ]])
 
 
@@ -310,7 +314,6 @@ menu.add_slider_int("Fake lag limit 1", 1, 16)
 menu.add_slider_int("Fake lag limit 2", 1, 16)
 menu.add_check_box("Custom Slow-Walk") -- OK
 menu.add_slider_int("Custom Slow-Walk Speed", 1, 120) -- OK
-menu.add_check_box("legit aa on E") -- OK
 
 
 menu.add_slider_int("------------ Rage ------------", 1, 1)
@@ -441,7 +444,6 @@ end
 
 client.add_callback("create_move", function (cmd)
     if not Crow_lua_loading then return end
-    if (E_Click ~= 0) and menu.get_bool("legit aa on E") then return end
     if not menu.get_bool("AntiAim") then menu.set_int("anti_aim.yaw_offset", 0) return end
     anti_aim(cmd)
 end)
@@ -493,19 +495,6 @@ end)
 -- Slow walk end
 
 
-
--- Legit aa begin
-client.add_callback("create_move",function ()
-    if not Crow_lua_loading or not (E_Click ~= 0) then return end
-    if menu.get_bool("legit aa on E") then
-        menu.set_int("anti_aim.pitch" , 0)
-        menu.set_int("anti_aim.yaw_offset" , 180)
-        menu.set_int("anti_aim.desync_range" , 60)
-        menu.set_int("anti_aim.desync_range_inverted" , 60)
-        menu.set_int("anti_aim.desync_type" , 1)
-    end
-end)
--- Legit aa end
 
 
 
