@@ -21,9 +21,9 @@ for i=1,3 do
 	console.execute("clear")
 end
 
-print(title_text)
+client.log(title_text)
 
-print([[
+client.log([[
 
 ---------------------Crow.lua---------------------
 author:         Crow
@@ -1490,7 +1490,6 @@ local function coolopt()
     console.set_int( "gameinstructor_enable", 0 )
     console.set_int( "cl_csm_world_shadows_in_viewmodelcascade", 0 )
     console.set_int( "cl_disable_ragdolls", 0 )
-    client.log("::  hello from katana")
     optimization = false
     end
 end
